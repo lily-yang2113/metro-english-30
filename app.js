@@ -329,6 +329,8 @@ function defaultState() {
         enabled: false,
         baseUrl: "https://api.openai.com/v1",
         model: "gpt-4o-mini",
+        ttsModel: "gpt-4o-mini-tts",
+        ttsVoice: "alloy",
         apiKey: "",
       },
       dailyGoalMinutes: 30,
@@ -390,6 +392,12 @@ const runtime = {
     speaking: false,
     paused: false,
     rate: 0.9,
+    voiceURI: "",
+    mode: "browser",
+    aiLoading: false,
+    aiUrl: "",
+    aiAudio: null,
+    requestId: 0,
   },
   writing: {
     title: "",
@@ -776,12 +784,70 @@ function estimatedAudioMinutes() {
   return Math.max(1, Math.ceil((LESSON_WORD_COUNT / (145 * runtime.audio.rate)) * 10) / 10);
 }
 
+function scoreAmericanVoice(voice) {
+  const name = String(voice.name || "").toLowerCase();
+  const lang = String(voice.lang || "").toLowerCase().replace("_", "-");
+  let score = 0;
+
+  if (lang.startsWith("en-us")) score += 50;
+  else if (lang.startsWith("en")) score += 15;
+  else return -1000;
+
+  if (/natural|neural|premium|enhanced/.test(name)) score += 100;
+  if (/online/.test(name)) score += 35;
+  if (/aria|jenny|michelle|ava|allison|samantha|google us english/.test(name)) score += 45;
+  if (/david|alex|guy|mark|zira/.test(name)) score += 12;
+  if (/compact|espeak|robot/.test(name)) score -= 80;
+  if (voice.localService) score += 3;
+  return score;
+}
+
+function getAmericanVoices() {
+  if (!speechSupported()) return [];
+  return window.speechSynthesis
+    .getVoices()
+    .filter((voice) => String(voice.lang || "").toLowerCase().startsWith("en"))
+    .sort((a, b) => scoreAmericanVoice(b) - scoreAmericanVoice(a));
+}
+
+function getSelectedSpeechVoice() {
+  const voices = getAmericanVoices();
+  if (!voices.length) return null;
+  return voices.find((voice) => voice.voiceURI === runtime.audio.voiceURI) || voices[0];
+}
+
+function readableVoiceName(voice) {
+  if (!voice) return "自动选择最佳美音";
+  return String(voice.name)
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function renderAudioPlayer() {
-  const supported = speechSupported();
+  const browserSupported = speechSupported();
+  const apiReady =
+    state.settings.api.enabled &&
+    state.settings.api.apiKey.trim() &&
+    state.settings.api.baseUrl.trim() &&
+    state.settings.api.ttsModel.trim();
+  const supported = runtime.audio.mode === "ai" ? apiReady : browserSupported;
+  const voices = getAmericanVoices();
+  const selectedVoice = getSelectedSpeechVoice();
   const active = runtime.audio.speaking && !runtime.audio.paused;
   const paused = runtime.audio.speaking && runtime.audio.paused;
-  const actionLabel = active ? "暂停" : paused ? "继续" : "播放全文";
+  const actionLabel = runtime.audio.aiLoading
+    ? "生成中"
+    : active
+      ? "暂停"
+      : paused
+        ? "继续"
+        : "播放全文";
   const actionIcon = active ? "pause" : "play";
+  const voiceLabel =
+    runtime.audio.mode === "ai"
+      ? `AI 美音 · ${state.settings.api.ttsVoice || "alloy"}`
+      : readableVoiceName(selectedVoice);
 
   return `
     <section class="audio-panel" aria-label="课文整篇音频">
@@ -789,13 +855,31 @@ function renderAudioPlayer() {
         <span class="audio-symbol">${icon("headphones")}</span>
         <div class="audio-copy">
           <strong>整篇课文朗读</strong>
-          <p>${supported ? `${LESSON_WORD_COUNT} 词 · 约 ${estimatedAudioMinutes()} 分钟 · 浏览器英语语音` : "当前浏览器不支持语音朗读"}</p>
+          <p>${supported ? `${voiceLabel} · 约 ${estimatedAudioMinutes()} 分钟` : "当前模式暂不可用"}</p>
         </div>
-        <button class="button ${active ? "secondary" : "on-dark"} small audio-play" data-action="toggle-audio" type="button" ${supported ? "" : "disabled"}>
+        <button class="button ${active ? "secondary" : "on-dark"} small audio-play" data-action="toggle-audio" type="button" ${supported && !runtime.audio.aiLoading ? "" : "disabled"}>
           ${icon(actionIcon, "sm")} ${actionLabel}
         </button>
       </div>
+
+      <div class="audio-mode">
+        <button class="${runtime.audio.mode === "browser" ? "active" : ""}" data-action="set-audio-mode" data-mode="browser" type="button">设备自然美音</button>
+        <button class="${runtime.audio.mode === "ai" ? "active" : ""}" data-action="set-audio-mode" data-mode="ai" type="button">${apiReady ? "AI 美音" : "AI 美音 · 需配置"}</button>
+      </div>
+
       <div class="audio-controls">
+        <label class="audio-voice-field">
+          <span>声线</span>
+          <select class="select compact" data-audio-voice ${browserSupported && runtime.audio.mode === "browser" ? "" : "disabled"}>
+            <option value="">自动选择最佳美音</option>
+            ${voices
+              .map(
+                (voice) =>
+                  `<option value="${escapeHTML(voice.voiceURI)}" ${voice.voiceURI === runtime.audio.voiceURI ? "selected" : ""}>${escapeHTML(readableVoiceName(voice))}</option>`,
+              )
+              .join("")}
+          </select>
+        </label>
         <label>
           <span>语速</span>
           <select class="select compact" data-audio-rate ${supported ? "" : "disabled"}>
@@ -807,15 +891,21 @@ function renderAudioPlayer() {
               .join("")}
           </select>
         </label>
-        <button class="button ghost small" data-action="stop-audio" type="button" ${runtime.audio.speaking ? "" : "disabled"}>
+        <button class="button ghost small" data-action="stop-audio" type="button" ${runtime.audio.speaking || runtime.audio.aiLoading ? "" : "disabled"}>
           ${icon("stop", "sm")} 停止
         </button>
       </div>
+      ${runtime.audio.mode === "ai" && !apiReady ? `<p class="audio-tip">请先在设置中配置 API、语音模型和声线。</p>` : ""}
     </section>
   `;
 }
 
 function toggleLessonAudio() {
+  if (runtime.audio.mode === "ai") {
+    toggleAIAudio();
+    return;
+  }
+
   if (!speechSupported()) {
     toast("当前浏览器不支持整篇语音朗读。");
     return;
@@ -837,9 +927,12 @@ function toggleLessonAudio() {
 
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(lessonSpeechText());
-  utterance.lang = "en-US";
-  utterance.rate = runtime.audio.rate;
-  utterance.pitch = 1;
+  const voice = getSelectedSpeechVoice();
+  if (voice) utterance.voice = voice;
+  utterance.lang = voice?.lang || "en-US";
+  utterance.rate = Math.max(0.7, Math.min(1.1, runtime.audio.rate));
+  utterance.pitch = 1.0;
+  utterance.volume = 1;
   utterance.onstart = () => {
     runtime.audio.speaking = true;
     runtime.audio.paused = false;
@@ -864,12 +957,133 @@ function toggleLessonAudio() {
   renderApp();
 }
 
-function stopLessonAudio() {
-  if (!speechSupported()) return;
-  window.speechSynthesis.cancel();
+function audioSpeechEndpoint() {
+  const baseUrl = state.settings.api.baseUrl.replace(/\/+$/, "");
+  return baseUrl.endsWith("/audio/speech") ? baseUrl : `${baseUrl}/audio/speech`;
+}
+
+async function createAITTSAudio() {
+  const requestId = runtime.audio.requestId;
+  const { apiKey, ttsModel, ttsVoice } = state.settings.api;
+  const speechBody = {
+    model: ttsModel,
+    voice: ttsVoice || "alloy",
+    input: lessonSpeechText(),
+    response_format: "mp3",
+    speed: Math.max(0.75, Math.min(1.15, runtime.audio.rate)),
+  };
+  if (/gpt-4o/i.test(ttsModel)) {
+    speechBody.instructions =
+      "Speak in a warm, natural American English accent at a clear learning pace.";
+  }
+  const response = await fetch(audioSpeechEndpoint(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(speechBody),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`语音接口返回 ${response.status}: ${detail.slice(0, 160)}`);
+  }
+
+  const blob = await response.blob();
+  if (requestId !== runtime.audio.requestId) throw new Error("语音生成已取消");
+  if (!blob.size) throw new Error("语音接口没有返回音频数据");
+  if (runtime.audio.aiUrl) URL.revokeObjectURL(runtime.audio.aiUrl);
+  runtime.audio.aiUrl = URL.createObjectURL(blob);
+  const audio = new Audio(runtime.audio.aiUrl);
+  audio.preload = "auto";
+  audio.playbackRate = Math.max(0.75, Math.min(1.15, runtime.audio.rate));
+  audio.onplay = () => {
+    runtime.audio.speaking = true;
+    runtime.audio.paused = false;
+    renderApp();
+  };
+  audio.onpause = () => {
+    if (!audio.ended) {
+      runtime.audio.speaking = true;
+      runtime.audio.paused = true;
+      renderApp();
+    }
+  };
+  audio.onended = () => {
+    runtime.audio.speaking = false;
+    runtime.audio.paused = false;
+    renderApp();
+  };
+  audio.onerror = () => {
+    runtime.audio.speaking = false;
+    runtime.audio.paused = false;
+    renderApp();
+    toast("AI 美音播放失败，请检查语音模型或声线设置。");
+  };
+  runtime.audio.aiAudio = audio;
+  return audio;
+}
+
+function toggleAIAudio() {
+  const api = state.settings.api;
+  if (
+    !api.enabled ||
+    !api.apiKey.trim() ||
+    !api.baseUrl.trim() ||
+    !api.ttsModel.trim()
+  ) {
+    toast("请先在设置中配置 AI 语音接口。");
+    runtime.activeTab = "settings";
+    renderApp();
+    return;
+  }
+
+  const audio = runtime.audio.aiAudio;
+  if (audio && !audio.paused) {
+    audio.pause();
+    return;
+  }
+  if (audio && audio.paused && !audio.ended) {
+    audio.play().catch(() => toast("无法继续播放 AI 美音。"));
+    return;
+  }
+
+  runtime.audio.aiLoading = true;
+  renderApp();
+  createAITTSAudio()
+    .then((newAudio) => newAudio.play())
+    .catch((error) => {
+      toast(`${error.message}，已切回设备自然美音。`);
+      runtime.audio.mode = "browser";
+      runtime.audio.aiLoading = false;
+      renderApp();
+      window.setTimeout(() => toggleLessonAudio(), 0);
+    })
+    .finally(() => {
+      runtime.audio.aiLoading = false;
+      renderApp();
+    });
+}
+
+function setAudioMode(mode) {
+  if (!["browser", "ai"].includes(mode)) return;
+  stopLessonAudio(false);
+  runtime.audio.mode = mode;
+  renderApp();
+}
+
+function stopLessonAudio(shouldRender = true) {
+  runtime.audio.requestId += 1;
+  if (speechSupported()) window.speechSynthesis.cancel();
+  if (runtime.audio.aiAudio) {
+    runtime.audio.aiAudio.pause();
+    runtime.audio.aiAudio.currentTime = 0;
+  }
   runtime.audio.speaking = false;
   runtime.audio.paused = false;
-  renderApp();
+  runtime.audio.aiLoading = false;
+  if (shouldRender) renderApp();
 }
 
 function renderLessonStage(progress) {
@@ -1676,7 +1890,7 @@ function renderSettings() {
             <div class="settings-row" style="padding-top:0">
               <div>
                 <strong>启用 AI 批改</strong>
-                <p>回译批改和自由写作点评均调用 OpenAI 兼容的 Chat Completions 接口。</p>
+                <p>回译批改和写作点评使用 Chat Completions，AI 美音使用 Audio Speech 接口。</p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="api-enabled" ${api.enabled ? "checked" : ""} />
@@ -1691,6 +1905,29 @@ function renderSettings() {
             <div class="field">
               <label for="api-model">模型名称</label>
               <input class="input" id="api-model" value="${escapeHTML(api.model)}" placeholder="gpt-4o-mini" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="api-tts-model">语音模型</label>
+              <input class="input" id="api-tts-model" value="${escapeHTML(api.ttsModel || "gpt-4o-mini-tts")}" placeholder="gpt-4o-mini-tts" autocomplete="off" />
+              <p class="field-hint">用于“AI 美音”整篇课文朗读，音频不会上传到 Codex 存储。</p>
+            </div>
+            <div class="field">
+              <label for="api-tts-voice">美音声线</label>
+              <select class="select" id="api-tts-voice">
+                ${[
+                  ["alloy", "Alloy · 中性自然"],
+                  ["nova", "Nova · 清晰女声"],
+                  ["coral", "Coral · 明亮女声"],
+                  ["sage", "Sage · 温暖女声"],
+                  ["ash", "Ash · 沉稳男声"],
+                  ["onyx", "Onyx · 低沉男声"],
+                ]
+                  .map(
+                    ([value, label]) =>
+                      `<option value="${value}" ${api.ttsVoice === value ? "selected" : ""}>${label}</option>`,
+                  )
+                  .join("")}
+              </select>
             </div>
             <div class="field">
               <label for="api-key">API Key</label>
@@ -2299,15 +2536,22 @@ function updateSettingsFromForm() {
   const enabled = document.querySelector("#api-enabled")?.checked || false;
   const baseUrl = document.querySelector("#api-base-url")?.value.trim() || "";
   const model = document.querySelector("#api-model")?.value.trim() || "";
+  const ttsModel = document.querySelector("#api-tts-model")?.value.trim() || "gpt-4o-mini-tts";
+  const ttsVoice = document.querySelector("#api-tts-voice")?.value || "alloy";
   const apiKey = document.querySelector("#api-key")?.value || "";
-  state.settings.api = { enabled, baseUrl, model, apiKey };
+  state.settings.api = { enabled, baseUrl, model, ttsModel, ttsVoice, apiKey };
   saveState();
 }
 
 function saveApi() {
   updateSettingsFromForm();
-  if (state.settings.api.enabled && (!state.settings.api.baseUrl || !state.settings.api.model)) {
-    toast("启用 AI 批改前，请填写 Base URL 和模型名称。");
+  if (
+    state.settings.api.enabled &&
+    (!state.settings.api.baseUrl ||
+      !state.settings.api.model ||
+      !state.settings.api.ttsModel)
+  ) {
+    toast("启用 AI 前，请填写 Base URL、文本模型和语音模型。");
     return;
   }
   toast("接口设置已保存。");
@@ -2359,7 +2603,17 @@ function resetData() {
   saveState();
   runtime.review = { queueIds: [], index: 0, revealed: false };
   runtime.output.index = 0;
-  runtime.audio = { speaking: false, paused: false, rate: 0.9 };
+  runtime.audio = {
+    speaking: false,
+    paused: false,
+    rate: 0.9,
+    voiceURI: "",
+    mode: "browser",
+    aiLoading: false,
+    aiUrl: "",
+    aiAudio: null,
+    requestId: 0,
+  };
   runtime.writing = { title: "", draft: "", aiLoading: false, resultId: null };
   toast("已恢复初始数据。");
   renderApp();
@@ -2608,6 +2862,9 @@ app.addEventListener("click", (event) => {
     case "toggle-audio":
       toggleLessonAudio();
       break;
+    case "set-audio-mode":
+      setAudioMode(target.dataset.mode);
+      break;
     case "stop-audio":
       stopLessonAudio();
       break;
@@ -2779,9 +3036,22 @@ app.addEventListener("change", (event) => {
 
   if (event.target.matches("[data-audio-rate]")) {
     runtime.audio.rate = Number(event.target.value) || 0.9;
+    if (runtime.audio.aiAudio) {
+      runtime.audio.aiAudio.playbackRate = Math.max(0.75, Math.min(1.15, runtime.audio.rate));
+    }
     if (runtime.audio.speaking) {
       stopLessonAudio();
       toast("语速已更新，重新点击播放即可生效。");
+    } else {
+      renderApp();
+    }
+  }
+
+  if (event.target.matches("[data-audio-voice]")) {
+    runtime.audio.voiceURI = event.target.value;
+    if (runtime.audio.speaking && runtime.audio.mode === "browser") {
+      stopLessonAudio();
+      toast("声线已切换，重新点击播放即可生效。");
     } else {
       renderApp();
     }
@@ -2822,6 +3092,14 @@ if ("serviceWorker" in navigator && /^https?:$/.test(window.location.protocol)) 
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
+}
+
+if (speechSupported()) {
+  const refreshVoiceOptions = () => {
+    if (runtime.activeTab === "study" && runtime.currentStage === "lesson") renderApp();
+  };
+  window.speechSynthesis.addEventListener?.("voiceschanged", refreshVoiceOptions);
+  window.setTimeout(refreshVoiceOptions, 350);
 }
 
 renderApp();
