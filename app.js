@@ -182,10 +182,252 @@ const DEMO_LESSON = {
   ],
 };
 
-const LESSON_SENTENCES = DEMO_LESSON.paragraphs.flatMap((paragraph) => paragraph.sentences);
-const LESSON_WORD_COUNT = tokenizeForWriting(
-  DEMO_LESSON.paragraphs.map((paragraph) => paragraph.en).join(" "),
-).length;
+const SAMPLE_LESSON_2 = {
+  id: "nc3-demo-02",
+  number: "Lesson 2",
+  title: "The Lost Notebook",
+  subtitle: "第二课样课 · 原创仿写",
+  patterns: [
+    {
+      id: "p1",
+      title: "happen to do",
+      explanation: "碰巧做某事，用来引出偶然发生的经历。",
+      example: "She happened to notice a small notebook on the bench.",
+    },
+    {
+      id: "p2",
+      title: "have no choice but to do",
+      explanation: "别无选择，只能做某事。",
+      example: "She had no choice but to take it to the station office.",
+    },
+    {
+      id: "p3",
+      title: "It turned out that...",
+      explanation: "结果发现……，用于揭示事情的真相或后续结果。",
+      example: "It turned out that the notebook contained months of research notes.",
+    },
+  ],
+  paragraphs: [
+    {
+      en: "On Monday morning, a student happened to notice a small notebook on the station bench. Its cover was wet from the rain, but the pages inside were still readable. She looked around for its owner, but the platform was already empty.",
+      zh: "周一早晨，一名学生碰巧注意到车站长椅上有一本小笔记本。封面被雨淋湿了，但里面的纸张仍然可以看清。她四处寻找失主，但站台已经空无一人。",
+      sentences: [
+        {
+          id: "l2s1",
+          en: "On Monday morning, a student happened to notice a small notebook on the station bench.",
+          zh: "周一早晨，一名学生碰巧注意到车站长椅上有一本小笔记本。",
+          patternId: "p1",
+        },
+        {
+          id: "l2s2",
+          en: "Its cover was wet from the rain, but the pages inside were still readable.",
+          zh: "封面被雨淋湿了，但里面的纸张仍然可以看清。",
+          patternId: "p2",
+        },
+        {
+          id: "l2s3",
+          en: "She looked around for its owner, but the platform was already empty.",
+          zh: "她四处寻找失主，但站台已经空无一人。",
+          patternId: "p3",
+        },
+      ],
+    },
+    {
+      en: "She had no choice but to take it to the station office. A clerk wrote down her phone number and promised to call if anyone asked about it. Two hours later, the owner called. It turned out that the notebook contained months of research notes for a project.",
+      zh: "她别无选择，只能把它送到车站办公室。一名工作人员记下了她的电话号码，并承诺如果有人询问就联系她。两小时后，失主打来了电话。原来，笔记本里装着数月的研究记录。",
+      sentences: [
+        {
+          id: "l2s4",
+          en: "She had no choice but to take it to the station office.",
+          zh: "她别无选择，只能把它送到车站办公室。",
+          patternId: "p2",
+        },
+        {
+          id: "l2s5",
+          en: "A clerk wrote down her phone number and promised to call if anyone asked about it.",
+          zh: "一名工作人员记下了她的电话号码，并承诺如果有人询问就联系她。",
+          patternId: "p1",
+        },
+        {
+          id: "l2s6",
+          en: "It turned out that the notebook contained months of research notes for a project.",
+          zh: "原来，笔记本里装着某个项目数月的研究记录。",
+          patternId: "p3",
+        },
+      ],
+    },
+    {
+      en: "The student met the owner after class and returned the notebook. The owner was so relieved that she offered to buy coffee, but the student refused. What mattered was not the reward; it was knowing that several months of work had not disappeared.",
+      zh: "学生下课后与失主见面并归还了笔记本。失主如释重负，提出请她喝咖啡，但学生拒绝了。重要的不是回报，而是知道数月的工作没有消失。",
+      sentences: [
+        {
+          id: "l2s7",
+          en: "The student met the owner after class and returned the notebook.",
+          zh: "学生下课后与失主见面并归还了笔记本。",
+          patternId: "p3",
+        },
+        {
+          id: "l2s8",
+          en: "The owner was so relieved that she offered to buy coffee, but the student refused.",
+          zh: "失主如释重负，提出请她喝咖啡，但学生拒绝了。",
+          patternId: "p1",
+        },
+        {
+          id: "l2s9",
+          en: "What mattered was not the reward; it was knowing that several months of work had not disappeared.",
+          zh: "重要的不是回报，而是知道数月的工作没有消失。",
+          patternId: "p2",
+        },
+      ],
+    },
+  ],
+};
+
+const SAMPLE_LESSON_3 = {
+  id: "nc3-demo-03",
+  number: "Lesson 3",
+  title: "The Night Train",
+  subtitle: "第三课样课 · 原创仿写",
+  patterns: [
+    {
+      id: "p1",
+      title: "by the time",
+      explanation: "到……的时候，常与完成时搭配。",
+      example: "By the time the train entered the mountains, snow had begun to fall.",
+    },
+    {
+      id: "p2",
+      title: "would have done",
+      explanation: "表示在过去某种条件下本会发生的结果。",
+      example: "Without the conductor's help, he would have missed the connection.",
+    },
+    {
+      id: "p3",
+      title: "no sooner ... than ...",
+      explanation: "一……就……，强调两个动作几乎同时发生。",
+      example: "No sooner had the train arrived than he ran toward the other platform.",
+    },
+  ],
+  paragraphs: [
+    {
+      en: "The night train left the city just after eleven. Most passengers were asleep before it reached the first stop. A young man, however, sat by the window and watched the lights of small towns pass one by one.",
+      zh: "夜班列车刚过十一点就驶离了城市。大多数乘客在列车到达第一站前就睡着了。不过，一名年轻男子坐在窗边，看着一座座小城镇的灯光逐一掠过。",
+      sentences: [
+        {
+          id: "l3s1",
+          en: "The night train left the city just after eleven.",
+          zh: "夜班列车刚过十一点就驶离了城市。",
+          patternId: "p1",
+        },
+        {
+          id: "l3s2",
+          en: "Most passengers were asleep before it reached the first stop.",
+          zh: "大多数乘客在列车到达第一站前就睡着了。",
+          patternId: "p2",
+        },
+        {
+          id: "l3s3",
+          en: "A young man, however, sat by the window and watched the lights of small towns pass one by one.",
+          zh: "不过，一名年轻男子坐在窗边，看着一座座小城镇的灯光逐一掠过。",
+          patternId: "p3",
+        },
+      ],
+    },
+    {
+      en: "By the time the train entered the mountains, snow had begun to fall. The journey was slower than expected, and the young man began to worry about missing his connection. A conductor told him that the next train would wait if the delay became serious.",
+      zh: "列车进入山区时，雪已经开始落下。旅程比预想的更慢，年轻男子开始担心错过换乘列车。列车员告诉他，如果延误变得严重，下一班车会等待。",
+      sentences: [
+        {
+          id: "l3s4",
+          en: "By the time the train entered the mountains, snow had begun to fall.",
+          zh: "列车进入山区时，雪已经开始落下。",
+          patternId: "p1",
+        },
+        {
+          id: "l3s5",
+          en: "The journey was slower than expected, and the young man began to worry about missing his connection.",
+          zh: "旅程比预想的更慢，年轻男子开始担心错过换乘列车。",
+          patternId: "p2",
+        },
+        {
+          id: "l3s6",
+          en: "A conductor told him that the next train would wait if the delay became serious.",
+          zh: "列车员告诉他，如果延误变得严重，下一班车会等待。",
+          patternId: "p3",
+        },
+      ],
+    },
+    {
+      en: "No sooner had the train arrived than he ran toward the other platform. The connecting train was still there, its doors open and its lights on. He stepped inside just as the whistle sounded. Later, he realized that a delay he had feared had become the most memorable part of the trip.",
+      zh: "列车刚到，他就朝另一个站台跑去。换乘列车仍在那里，车门开着，灯也亮着。就在汽笛响起时，他踏进了车厢。后来他意识到，自己曾害怕的延误反而成了旅途中最难忘的一部分。",
+      sentences: [
+        {
+          id: "l3s7",
+          en: "No sooner had the train arrived than he ran toward the other platform.",
+          zh: "列车刚到，他就朝另一个站台跑去。",
+          patternId: "p3",
+        },
+        {
+          id: "l3s8",
+          en: "The connecting train was still there, its doors open and its lights on.",
+          zh: "换乘列车仍在那里，车门开着，灯也亮着。",
+          patternId: "p1",
+        },
+        {
+          id: "l3s9",
+          en: "Later, he realized that a delay he had feared had become the most memorable part of the trip.",
+          zh: "后来他意识到，自己曾害怕的延误反而成了旅途中最难忘的一部分。",
+          patternId: "p2",
+        },
+      ],
+    },
+  ],
+};
+
+const COURSE_LESSONS = [DEMO_LESSON, SAMPLE_LESSON_2, SAMPLE_LESSON_3];
+
+function getCurrentLesson() {
+  return (
+    COURSE_LESSONS.find((lesson) => lesson.id === runtime.lessonId) ||
+    COURSE_LESSONS[0]
+  );
+}
+
+function getLessonSentences(lesson = getCurrentLesson()) {
+  return lesson.paragraphs.flatMap((paragraph) => paragraph.sentences);
+}
+
+function getLessonWordCount(lesson = getCurrentLesson()) {
+  return tokenizeForWriting(lesson.paragraphs.map((paragraph) => paragraph.en).join(" ")).length;
+}
+
+function getCurrentLessonIndex() {
+  const index = COURSE_LESSONS.findIndex((lesson) => lesson.id === runtime.lessonId);
+  return index >= 0 ? index : 0;
+}
+
+function getNextLesson() {
+  return COURSE_LESSONS[getCurrentLessonIndex() + 1] || null;
+}
+
+function isCourseComplete() {
+  return (
+    !getNextLesson() &&
+    state.lessonProgress[`${runtime.lessonId}:day-2`]?.stages?.wrapup === true
+  );
+}
+
+function deriveStoredCoursePosition(lessonProgress = {}) {
+  for (const lesson of COURSE_LESSONS) {
+    if (!lessonProgress[`${lesson.id}:day-1`]?.stages?.wrapup) {
+      return { lessonId: lesson.id, day: 1 };
+    }
+    if (!lessonProgress[`${lesson.id}:day-2`]?.stages?.wrapup) {
+      return { lessonId: lesson.id, day: 2 };
+    }
+  }
+  return { lessonId: COURSE_LESSONS[COURSE_LESSONS.length - 1].id, day: 2 };
+}
 
 const WRITING_GUIDANCE =
   "没有命题限制。可以围绕今天精学的课文、句型或回译错误展开，也可以写任何你想表达的内容。";
@@ -318,7 +560,8 @@ function formatShortDate(value) {
 
 function defaultState() {
   return {
-    version: 2,
+    version: 3,
+    currentLessonId: COURSE_LESSONS[0].id,
     currentDay: 1,
     cards: SEED_CARDS.map((card) => ({ ...card })),
     mistakes: [],
@@ -345,10 +588,37 @@ function loadState() {
     if (!raw) return defaultState();
     const parsed = JSON.parse(raw);
     const base = defaultState();
+    const savedProgress =
+      parsed.lessonProgress && typeof parsed.lessonProgress === "object"
+        ? parsed.lessonProgress
+        : {};
+    const derivedPosition = deriveStoredCoursePosition(savedProgress);
+    let currentLessonId = COURSE_LESSONS.some(
+      (lesson) => lesson.id === parsed.currentLessonId,
+    )
+      ? parsed.currentLessonId
+      : derivedPosition.lessonId;
+    let currentDay = Math.max(1, Math.min(2, Number(parsed.currentDay) || derivedPosition.day));
+    const savedLessonIndex = COURSE_LESSONS.findIndex(
+      (lesson) => lesson.id === currentLessonId,
+    );
+
+    if (savedProgress[`${currentLessonId}:day-1`]?.stages?.wrapup && currentDay === 1) {
+      currentDay = 2;
+    }
+    if (
+      savedProgress[`${currentLessonId}:day-2`]?.stages?.wrapup &&
+      COURSE_LESSONS[savedLessonIndex + 1]
+    ) {
+      currentLessonId = COURSE_LESSONS[savedLessonIndex + 1].id;
+      currentDay = 1;
+    }
+
     return {
       ...base,
       ...parsed,
-      currentDay: Math.max(1, Math.min(2, Number(parsed.currentDay) || 1)),
+      currentLessonId,
+      currentDay,
       cards: Array.isArray(parsed.cards) ? parsed.cards : base.cards,
       mistakes: Array.isArray(parsed.mistakes) ? parsed.mistakes : [],
       writingEntries: Array.isArray(parsed.writingEntries) ? parsed.writingEntries : [],
@@ -372,6 +642,9 @@ let state = loadState();
 
 const runtime = {
   activeTab: "home",
+  lessonId: COURSE_LESSONS.some((lesson) => lesson.id === state.currentLessonId)
+    ? state.currentLessonId
+    : COURSE_LESSONS[0].id,
   lessonDay: Math.max(1, Math.min(2, Number(state.currentDay) || 1)),
   currentStage: "warmup",
   timer: {
@@ -448,7 +721,7 @@ function unique(values) {
   return [...new Set(values.filter(Boolean))];
 }
 
-function getProgress(day = runtime.lessonDay, lessonId = DEMO_LESSON.id) {
+function getProgress(day = runtime.lessonDay, lessonId = runtime.lessonId) {
   const key = `${lessonId}:day-${day}`;
   if (!state.lessonProgress[key]) {
     state.lessonProgress[key] = {
@@ -547,6 +820,7 @@ function formatTime(seconds) {
 
 function renderHeader() {
   const stage = stageById(runtime.currentStage);
+  const lesson = getCurrentLesson();
   const runningClass = runtime.timer.running ? "running" : "";
   return `
     <header class="app-header">
@@ -554,7 +828,7 @@ function renderHeader() {
         <div class="brand-mark">E→</div>
         <div class="brand-copy">
           <strong>地铁英语30分钟</strong>
-          <span>${escapeHTML(DEMO_LESSON.number)} · Day ${runtime.lessonDay}</span>
+          <span>${escapeHTML(lesson.number)} · Day ${runtime.lessonDay}</span>
         </div>
       </div>
       <div class="header-actions">
@@ -599,6 +873,7 @@ function renderBottomNav() {
 }
 
 function renderHome() {
+  const lesson = getCurrentLesson();
   const progress = getProgress();
   const completedStages = STAGES.filter((stage) => progress.stages[stage.id]).length;
   const dueCount = getDueCards(99).length;
@@ -609,23 +884,29 @@ function renderHome() {
   const currentLessonTitle = allStagesDone
     ? runtime.lessonDay === 1
       ? "Day 1 已完成"
-      : "本课训练已完成"
+      : getNextLesson()
+        ? `准备进入 ${getNextLesson().number}`
+        : "全部课程已完成"
     : nextStage.label;
   const focusDescription = allStagesDone
     ? runtime.lessonDay === 1
       ? "今天四个阶段已经完成，可以进入 Day 2 做复现与巩固。"
-      : "两日训练已经完成，可以继续复习卡片或整理错题。"
+      : getNextLesson()
+        ? `本课两天训练已经完成，下一步进入 ${getNextLesson().title}。`
+        : "当前课程队列已经全部完成，可以继续复习卡片或整理错题。"
     : `${nextStage.description}，剩余约 ${STAGES.filter((stage) => !progress.stages[stage.id]).reduce((sum, stage) => sum + stage.minutes, 0)} 分钟。`;
   const focusButtonLabel = allStagesDone
     ? runtime.lessonDay === 1
       ? "开始 Day 2"
-      : "查看训练记录"
+      : getNextLesson()
+        ? `进入 ${getNextLesson().number}`
+        : "查看训练记录"
     : "继续训练";
 
   return `
     <main class="main">
       <section class="screen">
-        <p class="eyebrow">今日 · Day ${runtime.lessonDay}</p>
+        <p class="eyebrow">${escapeHTML(lesson.number)} · Day ${runtime.lessonDay}</p>
         <h1 class="page-title">把英文从脑子里<br />真正写出来。</h1>
         <p class="page-subtitle">30 分钟完成热身、精学、回译和做卡。全程键盘输入，地铁上也能专心练。</p>
 
@@ -700,10 +981,10 @@ function renderHome() {
             <h2 class="section-title">当前课文</h2>
           </div>
           <div class="surface lesson-banner">
-            <div class="lesson-cover">01</div>
+            <div class="lesson-cover">${String(getCurrentLessonIndex() + 1).padStart(2, "0")}</div>
             <div>
-              <h3>${escapeHTML(DEMO_LESSON.title)}</h3>
-              <p>${escapeHTML(DEMO_LESSON.number)} · 2 天完成 · 3 个核心句型</p>
+              <h3>${escapeHTML(lesson.title)}</h3>
+              <p>${escapeHTML(lesson.number)} · 第 ${getCurrentLessonIndex() + 1}/${COURSE_LESSONS.length} 课 · 2 天完成</p>
               <button class="text-link button ghost small" data-action="go-study" type="button" style="margin-top:10px">进入课文</button>
             </div>
           </div>
@@ -803,12 +1084,15 @@ function speechSupported() {
 }
 
 function lessonSpeechText() {
-  return DEMO_LESSON.paragraphs.map((paragraph) => paragraph.en).join(" ... ");
+  return getCurrentLesson().paragraphs.map((paragraph) => paragraph.en).join(" ... ");
 }
 
 function estimatedAudioMinutes() {
   if (!speechSupported()) return 0;
-  return Math.max(1, Math.ceil((LESSON_WORD_COUNT / (145 * runtime.audio.rate)) * 10) / 10);
+  return Math.max(
+    1,
+    Math.ceil((getLessonWordCount() / (145 * runtime.audio.rate)) * 10) / 10,
+  );
 }
 
 function scoreAmericanVoice(voice) {
@@ -882,7 +1166,7 @@ function renderAudioPlayer() {
         <span class="audio-symbol">${icon("headphones")}</span>
         <div class="audio-copy">
           <strong>整篇课文朗读</strong>
-          <p>${supported ? `${voiceLabel} · 约 ${estimatedAudioMinutes()} 分钟` : "当前模式暂不可用"}</p>
+          <p>${supported ? `${voiceLabel} · ${getLessonWordCount()} 词 · 约 ${estimatedAudioMinutes()} 分钟` : "当前模式暂不可用"}</p>
         </div>
         <button class="button ${active ? "secondary" : "on-dark"} small audio-play" data-action="toggle-audio" type="button" ${supported && !runtime.audio.aiLoading ? "" : "disabled"}>
           ${icon(actionIcon, "sm")} ${actionLabel}
@@ -1114,30 +1398,31 @@ function stopLessonAudio(shouldRender = true) {
 }
 
 function renderLessonStage(progress) {
+  const lesson = getCurrentLesson();
   return `
     <div class="panel-kicker">精读输入</div>
-    <h2 class="panel-title">${escapeHTML(DEMO_LESSON.title)}</h2>
+    <h2 class="panel-title">${escapeHTML(lesson.title)}</h2>
     <p class="panel-text">先听整篇或读一遍英文，再展开译文核对理解。遇到能复用的结构，点击“拆句型”加入今日学习。</p>
 
     ${renderAudioPlayer()}
 
     <div class="reader">
-      ${DEMO_LESSON.paragraphs.map((paragraph) => `<p>${escapeHTML(paragraph.en)}</p>`).join("")}
+      ${lesson.paragraphs.map((paragraph) => `<p>${escapeHTML(paragraph.en)}</p>`).join("")}
     </div>
 
     <details class="translation">
       <summary>展开中文翻译</summary>
       <div class="translation-body">
-        ${DEMO_LESSON.paragraphs.map((paragraph) => `<p>${escapeHTML(paragraph.zh)}</p>`).join("")}
+        ${lesson.paragraphs.map((paragraph) => `<p>${escapeHTML(paragraph.zh)}</p>`).join("")}
       </div>
     </details>
 
     <div class="section-head" style="margin-top:23px">
       <h3 class="section-title">今日核心句型</h3>
-      <span class="section-note">${progress.addedPatterns.length}/${DEMO_LESSON.patterns.length} 已加入</span>
+      <span class="section-note">${progress.addedPatterns.length}/${lesson.patterns.length} 已加入</span>
     </div>
     <div class="pattern-list">
-      ${DEMO_LESSON.patterns
+      ${lesson.patterns
         .map((pattern) => {
           const added = progress.addedPatterns.includes(pattern.id);
           return `
@@ -1186,12 +1471,13 @@ function renderLessonStage(progress) {
 }
 
 function renderOutputStage(progress) {
-  const sentence = LESSON_SENTENCES[runtime.output.index] || LESSON_SENTENCES[0];
+  const sentences = getLessonSentences();
+  const sentence = sentences[runtime.output.index] || sentences[0];
   const result = progress.outputs[sentence.id];
   const answer = result?.answer || "";
 
   return `
-    <div class="panel-kicker">逐句回译 · ${runtime.output.index + 1}/${LESSON_SENTENCES.length}</div>
+    <div class="panel-kicker">逐句回译 · ${runtime.output.index + 1}/${sentences.length}</div>
     <h2 class="panel-title">看中文，写出完整英文</h2>
     <p class="panel-text">尽量复现原句结构。提交后会逐词标出漏写、多写和正确部分，并自动收入错题本。</p>
 
@@ -1223,7 +1509,7 @@ function renderOutputStage(progress) {
         ${icon("chevronLeft", "sm")} 上一句
       </button>
       <button class="button small" data-action="next-sentence" type="button">
-        ${runtime.output.index === LESSON_SENTENCES.length - 1 ? "完成回译" : "下一句"} ${icon("chevronRight", "sm")}
+        ${runtime.output.index === sentences.length - 1 ? "完成回译" : "下一句"} ${icon("chevronRight", "sm")}
       </button>
     </div>
   `;
@@ -1258,7 +1544,8 @@ function renderOutputResult(sentence, result) {
 }
 
 function renderWrapupStage(progress) {
-  const weakOutputs = LESSON_SENTENCES.filter((sentence) => {
+  const lesson = getCurrentLesson();
+  const weakOutputs = getLessonSentences(lesson).filter((sentence) => {
     const output = progress.outputs[sentence.id];
     return output && output.score < 90;
   });
@@ -1266,7 +1553,7 @@ function renderWrapupStage(progress) {
     (card) =>
       card.createdAt &&
       dateKey(new Date(card.createdAt)) === dateKey() &&
-      card.sourceLesson === DEMO_LESSON.id,
+      card.sourceLesson === lesson.id,
   );
 
   return `
@@ -1369,6 +1656,7 @@ function renderStageContent() {
 }
 
 function renderStudy() {
+  const lesson = getCurrentLesson();
   const progress = getProgress();
   const stage = stageById(runtime.currentStage);
   const remaining = timerRemaining();
@@ -1380,7 +1668,7 @@ function renderStudy() {
       <section class="screen">
         <p class="eyebrow">30 分钟主动输出计划</p>
         <h1 class="page-title">今日训练</h1>
-        <p class="page-subtitle">${escapeHTML(DEMO_LESSON.title)} · 第 ${DEMO_LESSON.number.replace("Lesson ", "")} 课</p>
+        <p class="page-subtitle">${escapeHTML(lesson.title)} · 第 ${getCurrentLessonIndex() + 1}/${COURSE_LESSONS.length} 课</p>
 
         <div class="segmented" style="margin-top:18px">
           <button class="${runtime.lessonDay === 1 ? "active" : ""}" data-action="set-day" data-day="1" type="button">Day 1 · 输入与回译</button>
@@ -2088,7 +2376,7 @@ function renderModal() {
               </div>
               <div class="field">
                 <label for="card-source">来源课文</label>
-                <input class="input" id="card-source" value="${escapeHTML(card?.source || DEMO_LESSON.title)}" placeholder="来源课文" />
+                <input class="input" id="card-source" value="${escapeHTML(card?.source || getCurrentLesson().title)}" placeholder="来源课文" />
               </div>
             </div>
             <div class="modal-actions">
@@ -2131,17 +2419,27 @@ function renderModal() {
   }
 }
 
-function setLessonDay(day) {
+function setStudyPosition(lessonId, day) {
+  const lesson = COURSE_LESSONS.find((item) => item.id === lessonId);
+  if (!lesson) return;
   const nextDay = Math.max(1, Math.min(2, Number(day) || 1));
   stopLessonAudio(false);
+  runtime.lessonId = lesson.id;
   runtime.lessonDay = nextDay;
+  state.currentLessonId = lesson.id;
   state.currentDay = nextDay;
+  runtime.review = { queueIds: [], index: 0, revealed: false };
+  runtime.output.index = 0;
   saveState();
 
   const progress = getProgress(nextDay);
   const nextStage =
     STAGES.find((stage) => !progress.stages[stage.id]) || STAGES[STAGES.length - 1];
   switchStage(nextStage.id);
+}
+
+function setLessonDay(day) {
+  setStudyPosition(runtime.lessonId, day);
 }
 
 function completeStage(stageId, shouldRender = true) {
@@ -2154,11 +2452,18 @@ function completeStage(stageId, shouldRender = true) {
   if (nextIndex < STAGES.length) {
     switchStage(STAGES[nextIndex].id, shouldRender);
   } else if (runtime.lessonDay === 1) {
-    toast("Day 1 已完成，已进入 Day 2。");
+    toast(`${getCurrentLesson().number} Day 1 已完成，已进入 Day 2。`);
     setLessonDay(2);
-  } else if (shouldRender) {
-    toast("本课两日训练已完成。");
-    renderApp();
+  } else {
+    const completedLesson = getCurrentLesson();
+    const nextLesson = getNextLesson();
+    if (nextLesson) {
+      toast(`${completedLesson.number} 已完成，已进入 ${nextLesson.number} Day 1。`);
+      setStudyPosition(nextLesson.id, 1);
+    } else if (shouldRender) {
+      toast("全部课程已经完成。");
+      renderApp();
+    }
   }
 }
 
@@ -2386,7 +2691,7 @@ function recordMistake(sentence, result) {
 }
 
 function saveOutput(result) {
-  const sentence = LESSON_SENTENCES[runtime.output.index];
+  const sentence = getLessonSentences()[runtime.output.index];
   const progress = getProgress();
   progress.outputs[sentence.id] = {
     ...result,
@@ -2629,6 +2934,9 @@ function importData(file) {
         },
       };
       saveState();
+      runtime.lessonId = COURSE_LESSONS.some((lesson) => lesson.id === state.currentLessonId)
+        ? state.currentLessonId
+        : COURSE_LESSONS[0].id;
       runtime.lessonDay = Math.max(1, Math.min(2, Number(state.currentDay) || 1));
       runtime.review = { queueIds: [], index: 0, revealed: false };
       toast("备份导入成功。");
@@ -2645,6 +2953,7 @@ function resetData() {
   if (speechSupported()) window.speechSynthesis.cancel();
   state = defaultState();
   saveState();
+  runtime.lessonId = COURSE_LESSONS[0].id;
   runtime.lessonDay = 1;
   runtime.currentStage = "warmup";
   runtime.timer.stage = "warmup";
@@ -2674,7 +2983,7 @@ function handleCardForm(form) {
   const front = formData.get("front")?.toString().trim() || document.querySelector("#card-front")?.value.trim();
   const back = formData.get("back")?.toString().trim() || document.querySelector("#card-back")?.value.trim();
   const pattern = document.querySelector("#card-pattern")?.value.trim() || "";
-  const source = document.querySelector("#card-source")?.value.trim() || DEMO_LESSON.title;
+  const source = document.querySelector("#card-source")?.value.trim() || getCurrentLesson().title;
   if (!front || !back) {
     toast("请填写卡片正反面。");
     return;
@@ -2723,7 +3032,8 @@ function handleNoteForm() {
 }
 
 function makeOutputCard(sentenceId) {
-  const sentence = LESSON_SENTENCES.find((item) => item.id === sentenceId);
+  const lesson = getCurrentLesson();
+  const sentence = getLessonSentences(lesson).find((item) => item.id === sentenceId);
   if (!sentence) return;
   const exists = state.cards.find(
     (card) => card.sourceSentenceId === sentenceId && card.sourceDay === runtime.lessonDay,
@@ -2732,14 +3042,14 @@ function makeOutputCard(sentenceId) {
     toast("这张薄弱句已经做成卡片。");
     return;
   }
-  const pattern = DEMO_LESSON.patterns.find((item) => item.id === sentence.patternId);
+  const pattern = lesson.patterns.find((item) => item.id === sentence.patternId);
   state.cards.unshift({
     id: `card-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     front: sentence.zh,
     back: sentence.en,
     pattern: pattern?.title || "",
-    source: DEMO_LESSON.title,
-    sourceLesson: DEMO_LESSON.id,
+    source: lesson.title,
+    sourceLesson: lesson.id,
     sourceSentenceId: sentence.id,
     sourceDay: runtime.lessonDay,
     successStreak: 0,
@@ -2796,7 +3106,7 @@ function reviewCard(success) {
 function submitOutput(ai = false) {
   const textarea = document.querySelector("#output-answer");
   const answer = textarea?.value.trim() || "";
-  const sentence = LESSON_SENTENCES[runtime.output.index];
+  const sentence = getLessonSentences()[runtime.output.index];
   if (!answer) {
     toast("先写出一个英文版本，再提交对照。");
     return;
@@ -2873,6 +3183,10 @@ app.addEventListener("click", (event) => {
       const allStagesDone = !nextStage;
       if (action === "continue-study" && allStagesDone && runtime.lessonDay === 1) {
         setLessonDay(2);
+      } else if (action === "continue-study" && allStagesDone && getNextLesson()) {
+        const nextLesson = getNextLesson();
+        toast(`${getCurrentLesson().number} 已完成，已进入 ${nextLesson.number} Day 1。`);
+        setStudyPosition(nextLesson.id, 1);
       } else if (action === "continue-study" && nextStage) {
         switchStage(nextStage.id);
       } else {
@@ -2955,7 +3269,8 @@ app.addEventListener("click", (event) => {
       renderApp();
       break;
     case "next-sentence": {
-      if (runtime.output.index >= LESSON_SENTENCES.length - 1) {
+      const sentences = getLessonSentences();
+      if (runtime.output.index >= sentences.length - 1) {
         completeStage("output");
       } else {
         runtime.output.index += 1;
@@ -3140,7 +3455,7 @@ window.setInterval(tickTimer, 250);
 
 if ("serviceWorker" in navigator && /^https?:$/.test(window.location.protocol)) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    navigator.serviceWorker.register(new URL("./sw.js", window.location.href)).catch(() => {});
   });
 }
 
