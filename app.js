@@ -319,6 +319,7 @@ function formatShortDate(value) {
 function defaultState() {
   return {
     version: 2,
+    currentDay: 1,
     cards: SEED_CARDS.map((card) => ({ ...card })),
     mistakes: [],
     writingEntries: [],
@@ -347,6 +348,7 @@ function loadState() {
     return {
       ...base,
       ...parsed,
+      currentDay: Math.max(1, Math.min(2, Number(parsed.currentDay) || 1)),
       cards: Array.isArray(parsed.cards) ? parsed.cards : base.cards,
       mistakes: Array.isArray(parsed.mistakes) ? parsed.mistakes : [],
       writingEntries: Array.isArray(parsed.writingEntries) ? parsed.writingEntries : [],
@@ -370,7 +372,7 @@ let state = loadState();
 
 const runtime = {
   activeTab: "home",
-  lessonDay: 1,
+  lessonDay: Math.max(1, Math.min(2, Number(state.currentDay) || 1)),
   currentStage: "warmup",
   timer: {
     stage: "warmup",
@@ -411,6 +413,13 @@ const runtime = {
   },
   modal: null,
 };
+
+const initialProgress = getProgress();
+const initialStage = STAGES.find((stage) => !initialProgress.stages[stage.id]) || STAGES[STAGES.length - 1];
+runtime.currentStage = initialStage.id;
+runtime.timer.stage = initialStage.id;
+runtime.timer.totalSeconds = initialStage.minutes * MINUTE;
+runtime.timer.remaining = runtime.timer.totalSeconds;
 
 const app = document.querySelector("#app");
 const modalRoot = document.querySelector("#modal-root");
@@ -502,10 +511,13 @@ function getMasteredPatternCount() {
 }
 
 function getCompletedLessonCount() {
-  return unique(
-    Object.entries(state.lessonProgress)
-      .filter(([, progress]) => progress?.stages?.wrapup)
-      .map(([key]) => key.split(":day-")[0]),
+  const lessonIds = unique(
+    Object.keys(state.lessonProgress).map((key) => key.split(":day-")[0]),
+  );
+  return lessonIds.filter(
+    (lessonId) =>
+      state.lessonProgress[`${lessonId}:day-1`]?.stages?.wrapup &&
+      state.lessonProgress[`${lessonId}:day-2`]?.stages?.wrapup,
   ).length;
 }
 
@@ -593,7 +605,22 @@ function renderHome() {
   const nextStage =
     STAGES.find((stage) => !progress.stages[stage.id]) || STAGES[STAGES.length - 1];
   const progressPercent = (completedStages / STAGES.length) * 100;
-  const currentLessonTitle = completedStages === STAGES.length ? "今日训练已完成" : nextStage.label;
+  const allStagesDone = completedStages === STAGES.length;
+  const currentLessonTitle = allStagesDone
+    ? runtime.lessonDay === 1
+      ? "Day 1 已完成"
+      : "本课训练已完成"
+    : nextStage.label;
+  const focusDescription = allStagesDone
+    ? runtime.lessonDay === 1
+      ? "今天四个阶段已经完成，可以进入 Day 2 做复现与巩固。"
+      : "两日训练已经完成，可以继续复习卡片或整理错题。"
+    : `${nextStage.description}，剩余约 ${STAGES.filter((stage) => !progress.stages[stage.id]).reduce((sum, stage) => sum + stage.minutes, 0)} 分钟。`;
+  const focusButtonLabel = allStagesDone
+    ? runtime.lessonDay === 1
+      ? "开始 Day 2"
+      : "查看训练记录"
+    : "继续训练";
 
   return `
     <main class="main">
@@ -609,10 +636,10 @@ function renderHome() {
               <span class="pill on-dark">${completedStages}/${STAGES.length} 阶段</span>
             </div>
             <h2>${escapeHTML(currentLessonTitle)}</h2>
-            <p>${completedStages === STAGES.length ? "今天的四阶段已经完成，可以继续复习卡片或整理错题。" : `${nextStage.description}，剩余约 ${STAGES.filter((stage) => !progress.stages[stage.id]).reduce((sum, stage) => sum + stage.minutes, 0)} 分钟。`}</p>
+            <p>${focusDescription}</p>
             <div class="focus-actions">
               <button class="button on-dark" data-action="continue-study" type="button">
-                ${completedStages === STAGES.length ? "查看今日记录" : "继续训练"}
+                ${focusButtonLabel}
                 ${icon("arrowRight", "sm")}
               </button>
               <button class="button on-dark" data-action="go-cards" type="button">复习卡片</button>
@@ -2104,6 +2131,19 @@ function renderModal() {
   }
 }
 
+function setLessonDay(day) {
+  const nextDay = Math.max(1, Math.min(2, Number(day) || 1));
+  stopLessonAudio(false);
+  runtime.lessonDay = nextDay;
+  state.currentDay = nextDay;
+  saveState();
+
+  const progress = getProgress(nextDay);
+  const nextStage =
+    STAGES.find((stage) => !progress.stages[stage.id]) || STAGES[STAGES.length - 1];
+  switchStage(nextStage.id);
+}
+
 function completeStage(stageId, shouldRender = true) {
   const progress = getProgress();
   progress.stages[stageId] = true;
@@ -2113,8 +2153,11 @@ function completeStage(stageId, shouldRender = true) {
   const nextIndex = STAGES.findIndex((stage) => stage.id === stageId) + 1;
   if (nextIndex < STAGES.length) {
     switchStage(STAGES[nextIndex].id, shouldRender);
+  } else if (runtime.lessonDay === 1) {
+    toast("Day 1 已完成，已进入 Day 2。");
+    setLessonDay(2);
   } else if (shouldRender) {
-    toast("今天的四个阶段已完成。");
+    toast("本课两日训练已完成。");
     renderApp();
   }
 }
@@ -2586,6 +2629,7 @@ function importData(file) {
         },
       };
       saveState();
+      runtime.lessonDay = Math.max(1, Math.min(2, Number(state.currentDay) || 1));
       runtime.review = { queueIds: [], index: 0, revealed: false };
       toast("备份导入成功。");
       renderApp();
@@ -2601,6 +2645,11 @@ function resetData() {
   if (speechSupported()) window.speechSynthesis.cancel();
   state = defaultState();
   saveState();
+  runtime.lessonDay = 1;
+  runtime.currentStage = "warmup";
+  runtime.timer.stage = "warmup";
+  runtime.timer.totalSeconds = STAGES[0].minutes * MINUTE;
+  runtime.timer.remaining = runtime.timer.totalSeconds;
   runtime.review = { queueIds: [], index: 0, revealed: false };
   runtime.output.index = 0;
   runtime.audio = {
@@ -2821,7 +2870,10 @@ app.addEventListener("click", (event) => {
     case "continue-study": {
       const progress = getProgress();
       const nextStage = STAGES.find((stage) => !progress.stages[stage.id]);
-      if (action === "continue-study" && nextStage) {
+      const allStagesDone = !nextStage;
+      if (action === "continue-study" && allStagesDone && runtime.lessonDay === 1) {
+        setLessonDay(2);
+      } else if (action === "continue-study" && nextStage) {
         switchStage(nextStage.id);
       } else {
         navigate("study");
@@ -2839,9 +2891,7 @@ app.addEventListener("click", (event) => {
       switchStage(target.dataset.stage);
       break;
     case "set-day":
-      runtime.lessonDay = Number(target.dataset.day) || 1;
-      runtime.review = { queueIds: [], index: 0, revealed: false };
-      renderApp();
+      setLessonDay(target.dataset.day);
       break;
     case "switch-stage":
     case "next-stage": {
